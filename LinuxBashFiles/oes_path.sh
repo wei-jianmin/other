@@ -1098,7 +1098,7 @@ func_cd()
 		echo ""
 		echo "历史路径："
 		if [ -f /temporary_dir/$userdir/cd_history.log ]; then
-			awk '{print "-"99+1-NR"\t"\$1}' /temporary_dir/$userdir/cd_history.log 
+			    tail -n 20 /temporary_dir/$userdir/cd_history.log | awk '{print "-"20+1-NR"\t"\$1}'  
 		fi	
                 return
           fi
