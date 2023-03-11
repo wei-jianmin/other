@@ -1377,7 +1377,7 @@ func_list_func()
     fi
     ##在有的系统上不行，是因为match正则不识别\s    
     awk '{ 
-	if(match($0,/^\s*([a-zA-Z0-9_*<>]+\s+)+[a-zA-Z0-9_*:<>]+\s*\([a-zA-Z0-9_, *<>]*/)>0)
+	if(match($0,/^\s*([a-zA-Z0-9_*<>]+[ \t\v\s]+)+[a-zA-Z0-9_*:<>]+[ \t\v\s]*\([a-zA-Z0-9_, *<>]*/)>0)
 	{
         if(match($0,/^\s*(if|elif|do|for|while)\s*\(/)==0)
 	    {
