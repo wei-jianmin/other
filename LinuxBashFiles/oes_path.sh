@@ -1,7 +1,7 @@
 #! /bin/bash
 export svn_path=/data/svn
 #GCCVER=`gcc --version | head -n 1 | rev | cut -d' ' -f1 | rev | cut -d'.' -f1`
-version=1
+version=2
 
 ##-----------------------------------------命令定义--------------------------------------
 
@@ -52,7 +52,6 @@ alias cls='printf "\033c"'                          # 清屏，不支持-?获取
 alias pl='printLine2'                               # 输出分割线，输入-?获取更多帮助
 #*
 #* 其它
-alias telopen='func_telopen'                        # 同 export DISPLAY=参数1:0
 alias quit='func_quit'                              # 退出，不支持-?获取帮助
 alias notes='func_notes'                            # 记事本(同np)，使用-?获取帮助
 alias np='func_notes'                               # 记事本(同notes)，使用-?获取帮助
@@ -60,8 +59,45 @@ alias notes2='func_notes2'                          # 记事本2(同npp)，使�
 alias npp='func_notes2'                             # 记事本2(同notes2)，使用-?获取帮助
 alias xbc='func_export_bcpath'                      # 将svn/basecomponents路径下的一些常用路径导出为变量，不支持-?获取帮助
 alias ti='func_set_title'                           # 设置终端窗口标题,使用-?获取帮助
+alias upf='func_updatef'                            # 文件修改/添加匹配行，输入-?获取更多帮助
+alias upvim='func_update_vimrc'			    # 定制~/.vimrc文件，使之更易于使用，输入-?获取更多帮助
 
 ##-----------------------------------------函数实现--------------------------------------
+
+func_updatef()
+{
+    if [[ $# < 3 ]] 
+    then
+        echo "参数个数错误，请使用-?或--help参数获取帮助"
+        return
+    fi
+    if [ "$1" = "-?" -o "$1" = "--help" ]
+    then
+        echo "文件修改工具,"
+	echo "参数：filename prefix replace"
+        echo "功能： "
+	echo "遍历filename指定文件的每一行，"
+	echo "如果该行前缀符合prefix，则用replace替换该行的内容，"
+	echo "如果找不到匹配的行，则在文件最后追加一行，内容为replace"
+        return
+    fi
+
+    file=$1
+    prefix=$2
+    replace=$3
+    if [ ! -n "$file" -o ! -f "$file" ]; then
+	echo "文件不存在，无法修改"
+	return
+    fi
+
+    if [ ! -n "$prefix" -o ! -n "$replace" ]; then
+	echo "第二、三个参数不能为空"
+	return
+    fi
+
+    sed -ri "/^${prefix}/{h;s/.*/${replace}/};$ {x;/^$/{s//${replace}/;H};x}" $file
+}
+
 func_locatef()
 {
     if [ "$1" = "-?" -o "$1" = "--help" ]
@@ -1543,6 +1579,45 @@ init()
        echo "脚本执行完成，版本：$version，您可以通过 hlp 或 hlp -h 命令获取帮助信息"
     else
        echo 这是第一次执行该脚本，请先切换到管理员身份执行    
+    fi
+}
+
+func_update_vimrc()
+{
+    if [[ $# > 0 ]]
+    then
+	echo "功能：定制~/.vimrc，该命令不需要参数"
+	echo "设置内容包括："
+	echo "	显示行号"
+	echo "	语法高亮"
+	echo "	支持鼠标操作"
+	echo "	关闭vim兼容模式"
+	echo "	查找时忽略大小写"
+	echo "	记住上次退出时位置等"
+	return
+    fi
+
+    if [ ! -f "~/.vimrc" ]; then
+	touch ~/.vimrc
+    fi
+
+    sed -inr '/^set nonu/d' ~/.vimrc
+    func_updatef ~/.vimrc  "set nu" "set nu"
+    func_updatef ~/.vimrc  "set mouse" "set mouse=a"
+    func_updatef ~/.vimrc  "syntax enable" "syntax enable"
+    sed -inr '/^set compa/d' ~/.vimrc
+    func_updatef ~/.vimrc  "set nocomp" "set nocompatible"
+    sed -inr '/^set noignorecase/d' ~/.vimrc
+    func_updatef ~/.vimrc  "set ignorecase" "set ignorecase"
+    func_updatef ~/.vimrc  "set smartcase" "set smartcase"
+    func_updatef ~/.vimrc  "set backsp" "set backspace=2"
+    func_updatef ~/.vimrc  "set hlsearch" "set hlsearch"
+    
+    grep "au BufReadPost" ~/.vimrc > /dev/null
+    if [[ $? != 0 ]]; then
+	cat >> ~/.vimrc <<EOF
+au BufReadPost * if line("'\"") > 1 && line("'\"") <= line("$") | exe "normal! g'\"" | endif
+EOF
     fi
 }
 
