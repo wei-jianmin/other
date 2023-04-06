@@ -389,22 +389,23 @@ func_notes2()
     return
     elif [ "$1" == "--showall" ]
     then
-    for f1 in /temporary_dir/$userdir/notes/*
+    for f1 in `ls -t /temporary_dir/$userdir/notes/`
     do
         ff=$(basename $f1)
             echo "日志 ${ff} 的内容:"
             cat -n /temporary_dir/$userdir/notes/$ff
-        echo ""
+        printLine2 1 "——"
+        
     done
     return
     elif [ "$1" == "--showa" ]
     then
-    for f2 in /temporary_dir/$userdir/notes/*
+    for f2 in `ls -t /temporary_dir/$userdir/notes/`
     do
         ff=$(basename $f2)
             echo "日志 ${ff} 的内容:"
             cat /temporary_dir/$userdir/notes/$ff
-        echo ""
+        printLine2 1 "——"
     done
     return
     fi
