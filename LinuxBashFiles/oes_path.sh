@@ -1,7 +1,7 @@
 #! /bin/bash
 export svn_path=/data/svn
 #GCCVER=`gcc --version | head -n 1 | rev | cut -d' ' -f1 | rev | cut -d'.' -f1`
-version=3
+version=2
 
 ##-----------------------------------------命令定义--------------------------------------
 
@@ -39,10 +39,6 @@ alias cat2='func_cat2'                              # cat命令的功能增强�
 alias del='func_del'                                # 文件删除到回收站，使用-?获取帮助
 alias locatef='func_locatef'                        # locate命令，过滤掉文件夹，只显示文件，使用-?获取帮助
 alias located='func_located'                        # locate命令，过滤掉文件，只显示文件夹，使用-?获取帮助
-alias updb='func_updatedb2'                         # 对updatedb的定制化包装，使用-?获取帮助
-alias loc='func_locate2'                            # 对locate的定制化包装，使用-?获取帮助
-alias locf='func_locate2f'                          # loc命令，过滤掉文件夹，只显示文件，使用-?获取帮助
-alias locd='func_locate2d'                          # loc命令，过滤掉文件，只显示文件夹，使用-?获取帮助
 #*
 #* 编程辅助
 alias testload='func_call_test_load_so'             # 测试加载动态库，输入-?获取更多帮助
@@ -65,7 +61,6 @@ alias xbc='func_export_bcpath'                      # 将svn/basecomponents路�
 alias ti='func_set_title'                           # 设置终端窗口标题,使用-?获取帮助
 alias upf='func_updatef'                            # 文件修改/添加匹配行，输入-?获取更多帮助
 alias upvim='func_update_vimrc'			    # 定制~/.vimrc文件，使之更易于使用，输入-?获取更多帮助
-alias telopen='func_telopen'			    # 同 EXPORT DISPLAY={IP}:0
 
 ##-----------------------------------------函数实现--------------------------------------
 
@@ -84,7 +79,6 @@ func_updatef()
 	echo "遍历filename指定文件的每一行，"
 	echo "如果该行前缀符合prefix，则用replace替换该行的内容，"
 	echo "如果找不到匹配的行，则在文件最后追加一行，内容为replace"
-	echo "如果已经有跟replace一致的行，则不再追加replace行"
         return
     fi
 
@@ -100,8 +94,7 @@ func_updatef()
 	echo "第二、三个参数不能为空"
 	return
     fi
-    grep "$replace" $file
-    [ "$?" = "0" ] && return
+
     sed -ri "/^${prefix}/{h;s/.*/${replace}/};$ {x;/^$/{s//${replace}/;H};x}" $file
 }
 
@@ -129,39 +122,6 @@ func_located()
       return
     else
       for f in `locate $*`
-      do 
-        if [ -d "$f" ]; then
-             t=`stat -c "%y" $f | cut -d. -f1`
-	     echo "$t  $f"
-        fi
-      done | sort
-    fi
-}
-
-func_locate2f()
-{
-    if [ "$1" = "-?" -o "$1" = "--help" ]
-    then
-      echo "将参数传给loc执行文件查找，对输出结果进行二次处理："
-      echo "遍历每一条结果，如果该条是普通文件且存在，则执行 ls -l"
-      return
-    else
-      for f in `func_locate2 $*`
-      do 
-        [ -f "$f" ] && echo $(ls -lha --time-style="+%Y/%m/%d %H:%M" $f)
-      done
-    fi
-}
-
-func_locate2d()
-{
-    if [ "$1" = "-?" -o "$1" = "--help" ]
-    then
-      echo "将参数传给loc执行文件查找，对输出结果进行二次处理："
-      echo "遍历每一条结果，如果该条是文件夹且存在，则执行 ls -l"
-      return
-    else
-      for f in `func_locate2 $*`
       do 
         if [ -d "$f" ]; then
              t=`stat -c "%y" $f | cut -d. -f1`
@@ -313,7 +273,7 @@ if [ ! -d ~/.vim/plugin ]; then
   mkdir -p ~/.vim/plugin
 fi
 if [ ! -f ~/.vim/plugin/cscope_maps.vim ]; then
-#  echo "make vim cscopes_maps"
+  echo "make vim cscopes_maps"
   touch ~/.vim/plugin/cscope_maps.vim
   cat >> ~/.vim/plugin/cscope_maps.vim <<EOF
 if has("cscope")
@@ -1416,28 +1376,19 @@ func_uptodir()
       return 1
     fi
     f1=${PWD}
-    find_flag="n"
     while(( 1 ))
     do
          cd .. 
-      if [ "`pwd`" = "/" ]; then
-        break
-      fi
-      limit=$1${PWD##*$1}
-      fold=${PWD##*/}
-      #echo limit=$limit
-      #echo flod=$fold
-      if [ "$limit" == "$fold" ];then
-	find_flag="y"
-        break 
-      fi    
+     limit=$1${PWD##*$1}
+     fold=${PWD##*/}
+     ##echo limit=$limit
+     ##echo flod=$fold
+     if [ "$limit" == "$fold" ];then
+       break 
+     fi    
     done    
     f2=${PWD}
-    if [ "$find_flag" = "n" ]; then
-    	cd $f1
-	echo "在各级父目录中未找到与指定参数匹配的文件夹名称"
-	return
-    fi
+     cd $f1
     cd $f2    
     [ -f /temporary_dir/$userdir/cd_history.log ] && sed -i '1d' /temporary_dir/$userdir/cd_history.log && echo $f1 >> /temporary_dir/$userdir/cd_history.log
     printLine2 1 "——"
@@ -1449,7 +1400,7 @@ func_uptodir()
 #过滤显示用alias定义的命令[或#*开头的行（有-h参数时，显示为空行）]
 func_help()
 {
-    if [ "$1" = "" ]; then
+    if [ "$1" = "-h" ]; then
        awk '$1=="alias" { 
         sub("=.*","",$2);
         notes=substr($0,index($0,"#"));
@@ -1458,7 +1409,7 @@ func_help()
         $1=="#*" { 
         print($2);
         }' $BASH_SOURCE
-    elif [ "$1" = "-s" ]; then
+    elif [ "$1" = "" ]; then
        awk '$1=="alias" { 
         sub("=.*","",$2);
         notes=substr($0,index($0,"#"));
@@ -1466,8 +1417,8 @@ func_help()
         }' $BASH_SOURCE | sort
     else
        echo "参数错误，可以不使用参数，或使用-h参数"
-       echo "不使用参数时，按类别排序"
-       echo "使用-s参数时，按名字排序"
+       echo "不使用参数时，按名字排序"
+       echo "使用-h参数时，按类别排序"
     fi
 }
 func_cat2()
@@ -1600,6 +1551,7 @@ init()
        func_make_visual_change_dir
        func_exec_profile
        func_export_memdatas yy
+       func_make_vim_cscopes
        echo "脚本执行完成，版本：$version，您可以通过 hlp 或 hlp -h 命令获取帮助信息"
     elif [[ `whoami` == root ]]
     then
@@ -1615,6 +1567,7 @@ init()
        func_make_test_load_so
        func_exec_profile
        func_export_memdatas yy
+       func_make_vim_cscopes
        filename="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
        filename+="/"
        filename+=$(basename ${BASH_SOURCE})
@@ -1628,74 +1581,6 @@ init()
     else
        echo 这是第一次执行该脚本，请先切换到管理员身份执行    
     fi
-}
-
-func_updatedb2()
-{
-    if [[ $# > 0 ]] 
-    then
-        echo "参数个数错误，请使用-?或--help参数获取帮助"
-        return
-    fi
-    if [ "$1" = "-?" -o "$1" = "--help" ]
-    then
-        echo "使用 updatedb 命令，创建当前目录及其子目录的文件索引表，并记录在当面目录下的 locate.db 文件中"
-	echo "如果没有 updatedb 命令，请手动安装 mlocate 工具包"
-        return
-    fi
-
-    which updatedb > /dev/null
-    [ ! "$?" = "0" ] && echo "没有 updatedb 命令，请手动安装 mlocate 工具包" && return
-
-    if [ -f "locate.db" ]; then
-        read -p "当前目录下存在locate.db，该命令会重写此文件，确定吗？(Y/n) " -n 1 user_sel
-        if [ -n "$user_sel" -a "$user_sel" != "y" ]; then
-	    echo "用户输入不为 y，退出"
-            return 1
-        fi
-    fi
-    rm -f locate.db
-    updatedb -U `pwd` -o locate.db
-    echo "在当前目录下创建/更新了 locate.db 文件"
-}
-
-func_locate2()
-{
-    if [[ $# < 1 ]] 
-    then
-        echo "参数个数错误，请使用-?或--help参数获取帮助"
-        return
-    fi
-    if [ "$1" = "-?" -o "$1" = "--help" ]
-    then
-        echo "从当前目录向上逐级查找 locate.db 文件，该文件通常由命令 updatedb2 创建"
-	echo "如果找到 locate.db 文件，则使用 locate 命令在该文件中查找与参数匹配的字符串"
-	echo "如果一直到根目录都没有找到这样的文件，则使用系统的文件索引数据库进行查找"
-        return
-    fi
-    tmpdir=`pwd`
-    while(( 1 ))    
-    do
-        if [ -f "locate.db" ]; then
-		db=`pwd`/locate.db
-		cd "$tmpdir"
-        	read -p "将使用数据库 `pwd`/locate.db 进行检索，按回车键继续，按其它键退出" -n 1 user_sel
-        	if [ "$user_sel" != "" ]; then
-		    echo ""
-	            return 1
-        	fi
-#	        printLine2 1 "——"
-		echo ""
-		locate -d $db $*
-		return
-	fi
-        if [ "`pwd`" = "/" ]; then
-           cd "$tmpdir"
-           break
-        fi
-	cd ..
-    done
-    locate $*
 }
 
 func_update_vimrc()
@@ -1713,27 +1598,28 @@ func_update_vimrc()
 	return
     fi
 
-    touch ~/.vimrc
+    if [ ! -f "~/.vimrc" ]; then
+	touch ~/.vimrc
+    fi
 
-    func_updatef ~/.vimrc  "set nonu" "set nu"
+    sed -inr '/^set nonu/d' ~/.vimrc
+    func_updatef ~/.vimrc  "set nu" "set nu"
     func_updatef ~/.vimrc  "set mouse" "set mouse=a"
     func_updatef ~/.vimrc  "syntax enable" "syntax enable"
-    func_updatef ~/.vimrc  "set compa" "set nocompatible"
-    func_updatef ~/.vimrc  "set noignorecase" "set ignorecase"
+    sed -inr '/^set compa/d' ~/.vimrc
+    func_updatef ~/.vimrc  "set nocomp" "set nocompatible"
+    sed -inr '/^set noignorecase/d' ~/.vimrc
+    func_updatef ~/.vimrc  "set ignorecase" "set ignorecase"
     func_updatef ~/.vimrc  "set smartcase" "set smartcase"
     func_updatef ~/.vimrc  "set backsp" "set backspace=2"
     func_updatef ~/.vimrc  "set hlsearch" "set hlsearch"
-    func_updatef ~/.vimrc  "set encoding" "set encoding=utf-8"
-    func_updatef ~/.vimrc  "set termencoding" "set termencoding=utf-8"
-    func_updatef ~/.vimrc  "set fileencodings" "set fileencodings=utf-8,gb2312,gb18030"
-
+    
     grep "au BufReadPost" ~/.vimrc > /dev/null
     if [[ $? != 0 ]]; then
 	cat >> ~/.vimrc <<EOF
 au BufReadPost * if line("'\"") > 1 && line("'\"") <= line("$") | exe "normal! g'\"" | endif
 EOF
     fi
-    func_make_vim_cscopes
 }
 
 ##-----------------------------------------初始化--------------------------------------
