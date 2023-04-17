@@ -1671,6 +1671,7 @@ func_locate2()
         echo "从当前目录向上逐级查找 locate.db 文件，该文件通常由命令 updatedb2 创建"
 	echo "如果找到 locate.db 文件，则使用 locate 命令在该文件中查找与参数匹配的字符串"
 	echo "如果一直到根目录都没有找到这样的文件，则使用系统的文件索引数据库进行查找"
+	echo "注：只过滤显示在当前目录及其子目录中的找到的匹配条目"
         return
     fi
     tmpdir=`pwd`
@@ -1695,7 +1696,9 @@ func_locate2()
         fi
 	cd ..
     done
-    locate $*
+	echo "使用系统的文件索引数据库进行检索"
+	echo ""
+    locate $* | grep "$tmpdir/"
 }
 
 func_update_vimrc()
