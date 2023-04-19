@@ -43,6 +43,8 @@ alias updb='func_updatedb2'                         # 对updatedb的定制化包
 alias loc='func_locate2'                            # 对locate的定制化包装，使用-?获取帮助
 alias locf='func_locate2f'                          # loc命令，过滤掉文件夹，只显示文件，使用-?获取帮助
 alias locd='func_locate2d'                          # loc命令，过滤掉文件，只显示文件夹，使用-?获取帮助
+alias spush='func_spush'                            # 对scp命令的包装，使用-?获取帮助
+alias spull='func_spull'                            # 对scp命令的包装，使用-?获取帮助
 #*
 #* 编程辅助
 alias testload='func_call_test_load_so'             # 测试加载动态库，输入-?获取更多帮助
@@ -68,6 +70,123 @@ alias upvim='func_update_vimrc'			    # 定制~/.vimrc文件，使之更易于�
 alias telopen='func_telopen'			    # 同 EXPORT DISPLAY={IP}:0
 
 ##-----------------------------------------函数实现--------------------------------------
+
+spush_src=""
+spush_dst=""
+spush_path=""
+spull_src=""
+spull_dst=""
+spull_path=""
+func_spush()
+{
+    if [ "$1" = "-?" -o "$1" = "--help" ]
+    then
+        echo "文件远程传输（对scp命令的封装）"
+	echo "参数：[-s src] [-d dst] [-u pc]"
+        echo "      src ：要传输的本地文件或文件夹"
+	echo "      dst : 要存放在目标电脑的那个路径下"
+	echo "      pc  : 目标电脑的用户名和ip，形式为：用户名@ip"
+	echo "三个参数均为可选，如果不指定，则使用上次的值"
+        echo "如果上次的值为空，则会报错"
+        return
+    fi
+    unset OPTIND
+    while getopts ":s:d:u:" argo; do
+        case $argo in
+            s)
+                    spush_src=$OPTARG
+		    #echo "src=$spush_src"
+                    ;;
+            d)
+                    spush_dst=$OPTARG
+		    #echo "dst=$spush_dst"
+                    ;;
+            u)
+                    spush_path=$OPTARG
+		    #echo "pc=$spush_path"
+                    ;;
+            ?)
+                    echo "错误的参数"
+        esac
+    done
+    [ -z "$spush_src" ] && echo "src 参数为空，命令执行失败" && return
+    [ -z "$spush_dst" ] && echo "dst 参数为空，命令执行失败" && return
+    [ -z "$spush_path" ] && echo "pc 参数为空，命令执行失败" && return
+    sel=""
+    if [ -d "$spush_src" ]; then
+    	echo "将执行命令：scp -r $spush_src $spush_path:$spush_dst"
+	echo "确认按回车键或y键，否则请按其它键"
+	read -n 1 sel
+	if [ -z "$sel" -o "$sel" = "y" ]; then
+	    scp -r $spush_src $spush_path:$spush_dst
+	fi
+    elif [ -f "$spush_src" ]; then
+    	echo "将执行命令：scp $spush_src $spush_path:$spush_dst"
+	echo "确认按回车键或y键，否则请按其它键"
+	read -n 1 sel
+	if [ -z "$sel" -o "$sel" = "y" ]; then
+	    scp $spush_src $spush_path:$spush_dst
+	fi
+    else
+	echo "src指向的位置不存在，命令执行失败"
+    fi
+}
+
+func_spull()
+{
+    if [ "$1" = "-?" -o "$1" = "--help" ]
+    then
+        echo "文件远程传输（对scp命令的封装）"
+	echo "参数：[-d dst] [-s src] [-u pc]"
+	echo "      dst : 要存放在本电脑的哪个路径下"
+        echo "      src ：要获取的远端电脑的文件或文件夹路径"
+	echo "      pc  : 远端电脑的用户名和ip，形式为：用户名@ip"
+	echo "三个参数均为可选，如果不指定，则使用上次的值"
+        echo "如果上次的值为空，则会报错"
+        return
+    fi
+    unset OPTIND
+    while getopts ":s:d:u:" argo; do
+        case $argo in
+            s)
+                    spull_src=$OPTARG
+		    #echo "src=$spull_src"
+                    ;;
+            d)
+                    spull_dst=$OPTARG
+		    #echo "dst=$spull_dst"
+                    ;;
+            u)
+                    spull_path=$OPTARG
+		    #echo "pc=$spull_path"
+                    ;;
+            ?)
+                    echo "错误的参数"
+        esac
+    done
+    [ -z "$spull_src" ] && echo "src 参数为空，命令执行失败" && return
+    [ -z "$spull_dst" ] && echo "dst 参数为空，命令执行失败" && return
+    [ -z "$spull_path" ] && echo "pc 参数为空，命令执行失败" && return
+    sel=""
+    if [ -d "$spull_dst" ]; then
+    	echo "将执行命令：scp -r $spull_dst $spull_path:$spull_src"
+	echo "确认按回车键或y键，否则请按其它键"
+	read -n 1 sel
+	if [ -z "$sel" -o "$sel" = "y" ]; then
+	    scp -r $spull_dst $spull_path:$spull_src
+	fi
+    elif [ -f "$spull_dst" ]; then
+    	echo "将执行命令：scp $spull_dst $spull_path:$spull_src"
+	echo "确认按回车键或y键，否则请按其它键"
+	read -n 1 sel
+	if [ -z "$sel" -o "$sel" = "y" ]; then
+	    scp $spull_dst $spull_path:$spull_src
+	fi
+    else
+	echo "dst指向的位置不存在，命令执行失败"
+    fi
+
+}
 
 func_updatef()
 {
