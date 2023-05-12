@@ -1,7 +1,7 @@
 #! /bin/bash
 export svn_path=/data/svn
 #GCCVER=`gcc --version | head -n 1 | rev | cut -d' ' -f1 | rev | cut -d'.' -f1`
-version=3
+version=6
 
 ##-----------------------------------------命令定义--------------------------------------
 
@@ -9,14 +9,13 @@ version=3
 alias hlp='func_help'                               # 列出自定义的命令,大多数命令都支持 -? 参数以获取命令帮助
 #*
 #* 命令简写
-alias c="source /temporary_dir/$userdir/_visual_change_dir.sh"        # 使用类似于cd，但提供比cd更直观的显示效果，使用-?获取帮助
-alias l='ls -lha --time-style="+%Y/%m/%d %H:%M"'    # 类似于ls -l,默认按名字排序，-t按时间排序，-S按大小排序，-r反向排序
 alias var='export'                                  # 同 export
 alias hi='history'                                  # 同 history
-alias fs='du -hd 1'                                 # 同 du -hd 1,列出当前目录下各个文件夹的名字及大小
 alias js='jobs'                                     # 同 jobs
 #*
 #* 目录管理
+alias c="source /temporary_dir/$userdir/_visual_change_dir.sh"        # 使用类似于cd，但提供比cd更直观的显示效果，使用-?获取帮助
+alias l='ls -lha --time-style="+%Y/%m/%d %H:%M"'    # 类似于ls -l,默认按名字排序，-t按时间排序，-S按大小排序，-r反向排序
 alias m='mem_data_func'                             # 目录跳转命令，输入 m -? 获得详细帮助
 alias mc='mem_data_cd_func'                         # 跳转到变量目录，使用-?获取帮助
 alias mm='mem_data_func2'                           # 快速存储当前目录，使用-?获取帮助
@@ -46,6 +45,18 @@ alias locd='func_locate2d'                          # loc命令，过滤掉文�
 alias spush='func_spush'                            # 对scp命令的包装，使用-?获取帮助
 alias spull='func_spull'                            # 对scp命令的包装，使用-?获取帮助
 #*
+#* 文件编辑
+alias notes='func_notes'                            # 记事本(同np)，使用-?获取帮助
+alias np='func_notes'                               # 记事本(同notes)，使用-?获取帮助
+alias notes2='func_notes2'                          # 记事本2(同npp)，使用-?获取帮助
+alias npp='func_notes2'                             # 记事本2(同notes2)，使用-?获取帮助
+alias upf='func_updatef'                            # 文件修改/添加匹配行，输入-?获取更多帮助
+alias upvim='func_update_vimrc'			    # 定制~/.vimrc文件，使之更易于使用，输入-?获取更多帮助
+#*
+#* 磁盘管理
+alias chkrroot='func_check_root_files'		    # 检查根目录下各文件的大小，输入-?获取更多帮助
+alias fs='func_fs'                                  # 检查当前目录下各文件的大小，输入-?获取更多帮助
+#*
 #* 编程辅助
 alias testload='func_call_test_load_so'             # 测试加载动态库，输入-?获取更多帮助
 alias lookder='func_look_cert DER'                  # 查看证书，输入-?获取更多帮助
@@ -53,23 +64,62 @@ alias asn1view='func_asn1view'                      # 查看asn1文件结构，�
 alias lf='func_list_func'                           # 列出文件中的函数位置，输入-?获取更多帮助
 alias ff='func_find_file_func'                      # 查找函数定义(参数)所在的文件，输入-?获取更多帮助
 #*
-#* 屏幕输出
+#* 终端管理
 alias cls='printf "\033c"'                          # 清屏，不支持-?获取帮助
-alias pl='printLine2'                               # 输出分割线，输入-?获取更多帮助
+alias pl='printLine2'                               # 在屏幕上输出分割线，输入-?获取更多帮助
+alias ti='func_set_title'                           # 设置终端窗口标题,使用-?获取帮助
+alias telopen='func_telopen'			    # 同 EXPORT DISPLAY={IP}:0, 输入-?获取更多帮助
+alias quit='func_quit'                              # 退出，不支持-?获取帮助
 #*
 #* 其它
-alias quit='func_quit'                              # 退出，不支持-?获取帮助
-alias notes='func_notes'                            # 记事本(同np)，使用-?获取帮助
-alias np='func_notes'                               # 记事本(同notes)，使用-?获取帮助
-alias notes2='func_notes2'                          # 记事本2(同npp)，使用-?获取帮助
-alias npp='func_notes2'                             # 记事本2(同notes2)，使用-?获取帮助
 alias xbc='func_export_bcpath'                      # 将svn/basecomponents路径下的一些常用路径导出为变量，不支持-?获取帮助
-alias ti='func_set_title'                           # 设置终端窗口标题,使用-?获取帮助
-alias upf='func_updatef'                            # 文件修改/添加匹配行，输入-?获取更多帮助
-alias upvim='func_update_vimrc'			    # 定制~/.vimrc文件，使之更易于使用，输入-?获取更多帮助
-alias telopen='func_telopen'			    # 同 EXPORT DISPLAY={IP}:0
 
 ##-----------------------------------------函数实现--------------------------------------
+
+func_fs()
+{
+    if [ "$1" = "-?" -o "$1" = "--help" ]
+    then
+        echo "使用du命令检查当前目录下的各个文件或文件夹的大小"
+	echo "该命令不需要指定任何参数"
+        return
+    fi
+    echo "文件夹:"
+    declare -A arr1
+    for f in `ls ./`; do
+	[ -n "$f" -a -d "$f" ] && arr1[${#arr1[*]}]="./$f"
+    done
+    du -sh `du -s ${arr1[*]} | sort -rn | cut -d'/' -f2`
+    echo ""
+    echo "文件："
+    for f in `ls -S ./`; do
+	[ -n "$f" -a -f "$f" ] && du -sh $f
+    done
+    echo ""
+    printf "总大小: "
+    du -hs
+}
+
+func_check_root_files()
+{
+    if [ "$1" = "-?" -o "$1" = "--help" ]
+    then
+        echo "使用du命令检查根目录下的各个文件或文件夹的大小"
+	echo "检查时会自动排除挂载点目录"
+	echo "该命令不需要指定任何参数"
+	echo "该命令主要是在系统盘（根目录）占用100%时，查看系统盘占用情况"
+        return
+    fi	
+	
+	s1=`df | cut -d% -f 2 | cut -d/ -f 2 | uniq | grep -v ^$`
+	s2=`ls /`
+	s3=`grep -Fxv "$s1" <<< "$s2" | grep -v media | grep -v proc`
+	for f in $s3; do
+		mountpoint -q "/$f" && continue
+	  	du -hd 1 "/$f" | tail -n 1
+	done
+}
+
 
 spush_src=""
 spush_dst=""
@@ -82,33 +132,41 @@ func_spush()
     if [ "$1" = "-?" -o "$1" = "--help" ]
     then
         echo "文件远程传输（对scp命令的封装）"
-	echo "参数：[-s src] [-d dst] [-u pc]"
+	echo "参数：[-s src] [-d dst] [-u pc] [-l]"
         echo "      src ：要传输的本地文件或文件夹"
 	echo "      dst : 要存放在目标电脑的那个路径下"
 	echo "      pc  : 目标电脑的用户名和ip，形式为：用户名@ip"
+	echo "      l   : 如果带有该选项，则只列出用户设置的参数信息，不进行真正发送"
 	echo "三个参数均为可选，如果不指定，则使用上次的值"
         echo "如果上次的值为空，则会报错"
         return
     fi
     unset OPTIND
-    while getopts ":s:d:u:" argo; do
+    sendflag="y"
+    while getopts ":s:d:u:l" argo; do
         case $argo in
             s)
                     spush_src=$OPTARG
-		    #echo "src=$spush_src"
                     ;;
             d)
                     spush_dst=$OPTARG
-		    #echo "dst=$spush_dst"
                     ;;
             u)
                     spush_path=$OPTARG
-		    #echo "pc=$spush_path"
+                    ;;
+            l)      sendflag="n"
                     ;;
             ?)
                     echo "错误的参数"
         esac
     done
+    if [ "$sendflag" = "n" ]; then
+	echo "src = $spush_src" 
+	echo "dst = $spush_dst"
+	echo "pc  = $spush_path"
+	echo "$spush_src ==> $spush_path:$spush_dst"
+	return
+    fi
     [ -z "$spush_src" ] && echo "src 参数为空，命令执行失败" && return
     [ -z "$spush_dst" ] && echo "dst 参数为空，命令执行失败" && return
     [ -z "$spush_path" ] && echo "pc 参数为空，命令执行失败" && return
@@ -137,50 +195,59 @@ func_spull()
     if [ "$1" = "-?" -o "$1" = "--help" ]
     then
         echo "文件远程传输（对scp命令的封装）"
-	echo "参数：[-d dst] [-s src] [-u pc]"
+	echo "参数：[-d dst] [-s src] [-u pc] [-l]"
 	echo "      dst : 要存放在本电脑的哪个路径下"
         echo "      src ：要获取的远端电脑的文件或文件夹路径"
 	echo "      pc  : 远端电脑的用户名和ip，形式为：用户名@ip"
+	echo "      l   : 如果带有该选项，则只列出用户设置的参数信息，不进行真正发送"
 	echo "三个参数均为可选，如果不指定，则使用上次的值"
         echo "如果上次的值为空，则会报错"
         return
     fi
     unset OPTIND
-    while getopts ":s:d:u:" argo; do
+    pullflag="y"
+    while getopts ":s:d:u:l" argo; do
         case $argo in
             s)
                     spull_src=$OPTARG
-		    #echo "src=$spull_src"
                     ;;
             d)
                     spull_dst=$OPTARG
-		    #echo "dst=$spull_dst"
                     ;;
             u)
                     spull_path=$OPTARG
-		    #echo "pc=$spull_path"
+                    ;;
+            l)     
+                    pullflag="n"
                     ;;
             ?)
                     echo "错误的参数"
         esac
     done
+    if [ "$pullflag" = "n" ]; then
+	echo "src = $spull_src" 
+	echo "dst = $spull_dst"
+	echo "pc  = $spull_path"
+	echo "$spull_dst <== $spull_path:$spull_src"
+	return
+    fi
     [ -z "$spull_src" ] && echo "src 参数为空，命令执行失败" && return
     [ -z "$spull_dst" ] && echo "dst 参数为空，命令执行失败" && return
     [ -z "$spull_path" ] && echo "pc 参数为空，命令执行失败" && return
     sel=""
     if [ -d "$spull_dst" ]; then
-    	echo "将执行命令：scp -r $spull_dst $spull_path:$spull_src"
+    	echo "将执行命令：scp -r $spull_path:$spull_src $spull_dst"
 	echo "确认按回车键或y键，否则请按其它键"
 	read -n 1 sel
 	if [ -z "$sel" -o "$sel" = "y" ]; then
-	    scp -r $spull_dst $spull_path:$spull_src
+	    scp -r $spull_path:$spull_src $spull_dst 
 	fi
     elif [ -f "$spull_dst" ]; then
-    	echo "将执行命令：scp $spull_dst $spull_path:$spull_src"
+    	echo "将执行命令：scp $spull_path:$spull_src $spull_dst" 
 	echo "确认按回车键或y键，否则请按其它键"
 	read -n 1 sel
 	if [ -z "$sel" -o "$sel" = "y" ]; then
-	    scp $spull_dst $spull_path:$spull_src
+	    scp $spull_path:$spull_src $spull_dst 
 	fi
     else
 	echo "dst指向的位置不存在，命令执行失败"
@@ -261,8 +328,9 @@ func_locate2f()
 {
     if [ "$1" = "-?" -o "$1" = "--help" ]
     then
-      echo "将参数传给loc执行文件查找，对输出结果进行二次处理："
+      echo "将参数传给loc命令，执行文件查找，对输出结果进行二次处理："
       echo "遍历每一条结果，如果该条是普通文件且存在，则执行 ls -l"
+      echo "关于loc命令，请使用 loc -? 获取其相关介绍"
       return
     else
       for f in `func_locate2 $*`
@@ -276,8 +344,9 @@ func_locate2d()
 {
     if [ "$1" = "-?" -o "$1" = "--help" ]
     then
-      echo "将参数传给loc执行文件查找，对输出结果进行二次处理："
+      echo "将参数传给loc命令，执行文件查找，对输出结果进行二次处理："
       echo "遍历每一条结果，如果该条是文件夹且存在，则执行 ls -l"
+      echo "关于loc命令，请使用 loc -? 获取其相关介绍"
       return
     else
       for f in `func_locate2 $*`
@@ -746,7 +815,9 @@ func_telopen()
 {
   if [ -z "$1" -o "$1" = '-?' -o "$1" = '--help' ]
   then     
+    echo "该命令接受一个参数，且该参数应该为当前主机的ip"
     echo '等价于 export DISPLAY=$1:0'    
+    echo "在 mobaxterm 终端中执行此命令，用以使得远程电脑上的程序在本机上显示运行"
     return
   elif [ $1 ]; then
     export DISPLAY=$1:0
@@ -780,14 +851,14 @@ func_copy_file()
      return
   else
      filepath=`pwd`/$1
-     filename=${filepath%.*}
+     filename="${filepath%.*}"
      if [[ "$1" =~ "." ]]; then
      extname=${filepath##*.}
      extname=".$extname"
      else
      extname=""
      fi
-     if test -e $filepath
+     if test -e "$filepath"
      then
         count=1
     while(( $count<=$copies ))
@@ -796,7 +867,7 @@ func_copy_file()
       then 
         echo "${filename}_${count}.${extname}已存在，跳过"
           else
-        cp $filepath  "${filename}_${count}${extname}"
+        cp "$filepath"  "${filename}_${count}${extname}"
         chmod 777 "${filename}_${count}${extname}"
       fi
       let "count++"
@@ -974,20 +1045,73 @@ mem_data_func()
       echo "* 命令字 -?/--help ：显示帮助"
       echo "* 命令字 -d 变量名 ：清除变量"
       echo "* 命令字 -d - ：清除所有记录的变量"
-      echo "* 命令字 变量名 字符串 ：存储变量"
+      echo "* 命令字 -r 旧变量名 新变量名 : 变量重命名"
+      echo "* 命令字 变量名 字符串 ：字符串存储到变量中"
+      echo "* 命令字 变量名% ：显示以变量名为前缀的所有变量"
+      echo "* 命令字 %变量名 ：显示以变量名为后缀的所有变量"
+      echo "* 命令字 %变量名% ：显示名字中包含变量名的所有变量"
+      echo "* 相关快捷命令："
       echo "* mc 变量名 : 跳转到存储的变量路径"
       echo "* mm 变量名 ：将当前路径存储到变量"
       echo "* ml 变量名 : 列出变量所代表目录的内容"
-      echo "* 命令字 -r 旧变量名 新变量名 : 重命名"
       echo "---------------------------------------------"
     ##显示变量
     else
-      if [ -e "/temporary_dir/$userdir/memdata_dir/$1" ]
-      then
-        ##echo "$1记录的内容为:"
-        cat /temporary_dir/$userdir/memdata_dir/$1
-      else
-        echo "该变量不存在"
+	param=`echo $1 | rev`
+	##后缀为%的参数,但前缀不为%
+	if [ "${param:0:1}" = "%" -a ! "${1:0:1}" = "%" ]; then
+	    len=${#1}
+	    len=$((len-1))
+	    str=${1:0:$len}
+	    for file in /temporary_dir/$userdir/memdata_dir/$str*
+	    do
+	      [ -d $file ] && continue
+	      filename=`basename $file`
+	      ll=$[15-${#filename}]
+	      printf "$filename  "
+	      seq -s '-' $ll | sed 's/[0-9]//g' | tr -d "\n"
+	      printf "  "
+	      ##printf "%-20s" $filename
+	      cat $file
+	    done
+	##前缀为%，但后缀不为%	
+	elif [ ! "${param:0:1}" = "%" -a "${1:0:1}" = "%" ]; then
+	    str=${1:1}
+	    for file in /temporary_dir/$userdir/memdata_dir/*$str
+	    do
+	      [ -d $file ] && continue
+	      filename=`basename $file`
+	      ll=$[15-${#filename}]
+	      printf "$filename  "
+	      seq -s '-' $ll | sed 's/[0-9]//g' | tr -d "\n"
+	      printf "  "
+	      ##printf "%-20s" $filename
+	      cat $file
+	    done
+	##前后缀都为%
+	elif [ "${param:0:1}" = "%" -a "${1:0:1}" = "%" ]; then
+	    len=${#1}
+	    len=$((len-2))
+	    str=${1:1:$len}
+	    for file in /temporary_dir/$userdir/memdata_dir/*$str*
+	    do
+	      [ -d $file ] && continue
+	      filename=`basename $file`
+	      ll=$[15-${#filename}]
+	      printf "$filename  "
+	      seq -s '-' $ll | sed 's/[0-9]//g' | tr -d "\n"
+	      printf "  "
+	      ##printf "%-20s" $filename
+	      cat $file
+	    done
+	else
+	      if [ -e "/temporary_dir/$userdir/memdata_dir/$1" ]
+	      then
+	        ##echo "$1记录的内容为:"
+	        cat /temporary_dir/$userdir/memdata_dir/$1
+	      else
+	        echo "该变量不存在"
+	fi
       fi
     fi
   ##没有参数，列出变量
@@ -1568,6 +1692,7 @@ func_uptodir()
 #过滤显示用alias定义的命令[或#*开头的行（有-h参数时，显示为空行）]
 func_help()
 {
+    echo "version ： $version"
     if [ "$1" = "" ]; then
        awk '$1=="alias" { 
         sub("=.*","",$2);
@@ -1606,6 +1731,7 @@ func_cat2()
     else
         sed -n "$2=;$2p" $1 | sed "N;s/\n/ : /"
     fi
+    echo ""
 }
 func_list_func()
 {
