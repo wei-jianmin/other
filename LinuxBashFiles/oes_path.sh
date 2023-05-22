@@ -1837,6 +1837,18 @@ func_make_file_dir()
     fi
 }
 
+func_m_tips()
+{
+	COMPREPLY=(`ls /temporary_dir/$userdir/memdata_dir/$2* | cut -d'/' -f5`)
+}
+
+func_set_m_tips()
+{
+	complete -F func_m_tips ml
+	complete -F func_m_tips mc
+	complete -F func_m_tips mx
+}
+
 init()
 {
     if [[ -e /temporary_dir/$userdir ]]
@@ -1845,6 +1857,7 @@ init()
        func_make_visual_change_dir
        func_exec_profile
        func_export_memdatas yy
+       func_set_m_tips
        echo "脚本执行完成，版本：$version，您可以通过 hlp 或 hlp -h 命令获取帮助信息"
     elif [[ `whoami` == root ]]
     then
@@ -1860,6 +1873,7 @@ init()
        func_make_test_load_so
        func_exec_profile
        func_export_memdatas yy
+       func_set_m_tips
        filename="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
        filename+="/"
        filename+=$(basename ${BASH_SOURCE})
@@ -1957,7 +1971,9 @@ func_update_vimrc()
 	echo "	支持鼠标操作"
 	echo "	关闭vim兼容模式"
 	echo "	查找时忽略大小写"
-	echo "	记住上次退出时位置等"
+	echo "	记住上次退出时位置"
+    echo "  设置tab缩进为4个空格"
+    echo "  设置cscopes快捷键"
 	return
     fi
 
@@ -1974,7 +1990,12 @@ func_update_vimrc()
     func_updatef ~/.vimrc  "set encoding" "set encoding=utf-8"
     func_updatef ~/.vimrc  "set termencoding" "set termencoding=utf-8"
     func_updatef ~/.vimrc  "set fileencodings" "set fileencodings=utf-8,gb2312,gb18030"
-
+    func_updatef ~/.vimrc  "set tabstop" "set tabstop=4"
+    func_updatef ~/.vimrc  "set softtabstop" "set softtabstop=4"
+    func_updatef ~/.vimrc  "set shiftwidth" "set shiftwidth=4"
+    func_updatef ~/.vimrc  "set expandtab" "set expandtab"
+    
+    
     grep "au BufReadPost" ~/.vimrc > /dev/null
     if [[ $? != 0 ]]; then
 	cat >> ~/.vimrc <<EOF
