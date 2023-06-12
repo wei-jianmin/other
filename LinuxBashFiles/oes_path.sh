@@ -1,7 +1,7 @@
 #! /bin/bash
 export svn_path=/data/svn
 #GCCVER=`gcc --version | head -n 1 | rev | cut -d' ' -f1 | rev | cut -d'.' -f1`
-version=6
+version=7.1
 
 ##-----------------------------------------命令定义--------------------------------------
 
@@ -44,6 +44,8 @@ alias locf='func_locate2f'                          # loc命令，过滤掉文�
 alias locd='func_locate2d'                          # loc命令，过滤掉文件，只显示文件夹，使用-?获取帮助
 alias spush='func_spush'                            # 对scp命令的包装，使用-?获取帮助
 alias spull='func_spull'                            # 对scp命令的包装，使用-?获取帮助
+alias sput='func_sput'                              # 对scp命令的包装，使用-?获取帮助
+alias sget='func_sget'                              # 对scp命令的包装，使用-?获取帮助
 #*
 #* 文件编辑
 alias notes='func_notes'                            # 记事本(同np)，使用-?获取帮助
@@ -75,6 +77,48 @@ alias quit='func_quit'                              # 退出，不支持-?获取
 alias xbc='func_export_bcpath'                      # 将svn/basecomponents路径下的一些常用路径导出为变量，不支持-?获取帮助
 
 ##-----------------------------------------函数实现--------------------------------------
+
+func_sput()
+{
+    if [ "$1" = "-?" -o "$1" = "--help" ]
+    then
+        echo "后跟要发送到远程电脑的文件或文件夹"
+	echo "该命令会将要发送的文件缓存，之后，可在远程电脑上用 sget 命令获取"
+	echo "重复调用该命令，会覆盖掉上次缓存的文件"
+        return
+    fi
+	if [ -f /temporary_dir/$userdir/sput.tar.gz ]; then
+		rm /temporary_dir/$userdir/sput.tar.gz
+	fi
+	tar -czf /temporary_dir/$userdir/sput.tar.gz $*
+}
+sget_name=""
+func_sget()
+{
+    if [ "$1" = "-?" -o "$1" = "--help" ]
+    then
+        echo "后跟远程电脑地址，格式为： 远程电脑用户名@远程电脑IP地址"
+	echo "调用该命令会将远程电脑上通过 sput 命令缓存的文件拉取过来"
+	echo "如果使用过该命令，再次使用该命令后，可不带后面的远程电脑地址"
+	echo "此时，命令将从上次记录的远程电脑地址上拉取"
+        return
+    fi
+	rand=$RANDOM
+	if [ -z "$1" ]; then
+		if [ -z "$sget_name" ]; then
+			echo "参数错误，请输入远程电脑地址"
+			return
+		fi
+	fi
+	if [[ "$1" == *"@"* ]]; then
+		sget_name="$1"
+		scp $sget_name:/temporary_dir/$userdir/sput.tar.gz ./sget.$rand.tar.gz
+		tar -xzf sget.$rand.tar.gz 
+		rm -f sget.$rand.tar.gz 
+	else
+		echo "参数格式错误，请使用 -? 获取帮助"
+	fi
+}
 
 func_fs()
 {
@@ -257,11 +301,6 @@ func_spull()
 
 func_updatef()
 {
-    if [[ $# < 3 ]] 
-    then
-        echo "参数个数错误，请使用-?或--help参数获取帮助"
-        return
-    fi
     if [ "$1" = "-?" -o "$1" = "--help" ]
     then
         echo "文件修改工具,"
@@ -273,10 +312,15 @@ func_updatef()
 	echo "如果已经有跟replace一致的行，则不再追加replace行"
         return
     fi
+    if [[ $# < 3 ]] 
+    then
+        echo "参数个数错误，请使用-?或--help参数获取帮助"
+        return
+    fi
 
     file=$1
     prefix=$2
-    replace=$3
+    replace=${@:3}
     if [ ! -n "$file" -o ! -f "$file" ]; then
 	echo "文件不存在，无法修改"
 	return
@@ -286,8 +330,8 @@ func_updatef()
 	echo "第二、三个参数不能为空"
 	return
     fi
-    grep "$replace" $file
-    [ "$?" = "0" ] && return
+    #grep "$replace" $file > /dev/null
+    #[ "$?" = "0" ] && return
     sed -ri "/^${prefix}/{h;s/.*/${replace}/};$ {x;/^$/{s//${replace}/;H};x}" $file
 }
 
