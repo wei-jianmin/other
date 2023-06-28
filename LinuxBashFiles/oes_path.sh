@@ -1,7 +1,7 @@
 #! /bin/bash
 export svn_path=/data/svn
 #GCCVER=`gcc --version | head -n 1 | rev | cut -d' ' -f1 | rev | cut -d'.' -f1`
-version=7.1
+version=7.2
 
 ##-----------------------------------------命令定义--------------------------------------
 
@@ -963,6 +963,7 @@ mem_data_cd_func()
   if [ "$1" = "-?" -o "$1" = "--help" ]
   then
     echo "后跟一个路径变量名，路径变量通过m命令产生，功能 : 跳转到该变量对应路径"
+    echo "当参数对应的变量中记录的是个文件位置时，跳转到该文件所在目录"
     echo "当没有带参数时，默认跳转到default_path"
     echo "注：关于default_path的产生，请参看mm命令的帮助信息"
     return 1
@@ -978,7 +979,20 @@ mem_data_cd_func()
     echo "变量不存在，请检查变量名是否正确"
     return 1
   fi
-  source /temporary_dir/$userdir/_visual_change_dir.sh `m $tmp`
+  
+  if [ -e "/temporary_dir/$userdir/memdata_dir/$tmp" ]; then
+	##echo "$1记录的内容为:"
+    pos=`cat /temporary_dir/$userdir/memdata_dir/$tmp`
+    if [ -f "$pos" ]; then
+        pos="$(dirname "$pos")"
+        source /temporary_dir/$userdir/_visual_change_dir.sh $pos
+    elif [ -d "$pos" ]; then
+        source /temporary_dir/$userdir/_visual_change_dir.sh $pos
+    else
+        echo "$tmp=$pos: 不是有效的路径"
+    fi
+  fi
+	      
 }
 
 ##mx 将路径变量导出为全局变量
@@ -1479,6 +1493,11 @@ func_clear_file()
 }
 func_make_visual_change_dir()
 {
+    [ ! `whoami` = root ] && return
+    if [ -f "/temporary_dir/$userdir/_visual_change_dir.sh" ]; then
+        chattr -i /temporary_dir/$userdir/_visual_change_dir.sh
+        chmod 777 /temporary_dir/$userdir/_visual_change_dir.sh
+    fi
     ##创建文件
     echo '#' > /temporary_dir/$userdir/_visual_change_dir.sh
     printLine "-" "line2" "1"
@@ -1606,8 +1625,8 @@ func_cd()
 }
 func_cd \$*
 EOF
-    [ `whoami` = root ] && chmod 777 /temporary_dir/$userdir/_visual_change_dir.sh
-
+    chmod 111 /temporary_dir/$userdir/_visual_change_dir.sh
+    chattr +i /temporary_dir/$userdir/_visual_change_dir.sh
 }
 func_make_test_load_so()
 {
@@ -1737,6 +1756,9 @@ func_uptodir()
 func_help()
 {
     echo "version ： $version"
+    if [ "$1" = "-v" ]; then
+        return
+    fi
     if [ "$1" = "" ]; then
        awk '$1=="alias" { 
         sub("=.*","",$2);
@@ -1756,6 +1778,7 @@ func_help()
        echo "参数错误，可以不使用参数，或使用-h参数"
        echo "不使用参数时，按类别排序"
        echo "使用-s参数时，按名字排序"
+       echo "使用-v参数时，仅显示版本号"
     fi
 }
 func_cat2()
@@ -1856,7 +1879,7 @@ func_make_file_dir()
         ##[ ! -d /temporary_dir/file_transfer_stack ] && mkdir /temporary_dir/file_transfer_stack 
         ##touch /temporary_dir/file_transfer_stack/stack_files_info.log
         ##chmod 777 /temporary_dir/file_transfer_stack/stack_files_info.log
-    [ -d /temporary_dir/$userdir ] && chmod -R 777 /temporary_dir/$userdir
+    [ -d /temporary_dir/$userdir ] && chmod -R 777 /temporary_dir/$userdir > /dev/null 2>&1
     else
         [ ! -d /temporary_dir/$userdir/notes ] && mkdir /temporary_dir/$userdir/notes && chmod 777 /temporary_dir/$userdir/notes
         [ ! -d /temporary_dir/$userdir/memdata_dir ] && mkdir /temporary_dir/$userdir/memdata_dir && chmod 777 /temporary_dir/$userdir/memdata_dir
@@ -1898,7 +1921,6 @@ init()
     if [[ -e /temporary_dir/$userdir ]]
     then
        func_make_file_dir
-       func_make_visual_change_dir
        func_exec_profile
        func_export_memdatas yy
        func_set_m_tips
