@@ -90,7 +90,7 @@ func_sput()
 	echo "该命令会将要发送的文件缓存，之后，可在远程电脑上用 sget 命令获取"
 	echo "使用 -i 作为参数时，可查看已缓存的待发送文件"
 	echo "使用 -d 作为参数是，将清空已缓存的待发送文件"
-	echo "重复调用该命令，会覆盖掉上次缓存的文件"
+	echo "重复调用该命令，会将新文件添加到缓存区而不会覆盖掉之前缓存的文件"
         return
     fi
     if [ $1 = -i ]; then
@@ -108,6 +108,10 @@ func_sput()
 	fi
 	echo "已清空待发送文件缓存区"
 	return
+    fi
+    if [ ! -e $1 ]; then
+	echo "参数错误"
+	return 
     fi
     echo "缓存如下文件到待发送区："
     if [ -f /temporary_dir/$userdir/sput.tar ]; then
