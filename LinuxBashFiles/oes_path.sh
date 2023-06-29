@@ -109,7 +109,7 @@ func_sput()
 	echo "已清空待发送文件缓存区"
 	return
     fi
-    echo "缓存如下文件到代理发送区："
+    echo "缓存如下文件到待发送区："
     if [ -f /temporary_dir/$userdir/sput.tar ]; then
 	tar -rvf /temporary_dir/$userdir/sput.tar $*
     else
