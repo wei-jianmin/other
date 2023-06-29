@@ -1,7 +1,7 @@
 #! /bin/bash
 export svn_path=/data/svn
 #GCCVER=`gcc --version | head -n 1 | rev | cut -d' ' -f1 | rev | cut -d'.' -f1`
-version=7.2
+version=7.3
 
 ##-----------------------------------------命令定义--------------------------------------
 
@@ -56,7 +56,7 @@ alias upf='func_updatef'                            # 文件修改/添加匹配�
 alias upvim='func_update_vimrc'			    # 定制~/.vimrc文件，使之更易于使用，输入-?获取更多帮助
 #*
 #* 磁盘管理
-alias chkrroot='func_check_root_files'		    # 检查根目录下各文件的大小，输入-?获取更多帮助
+alias chkroot='func_check_root_files'		    # 检查根目录下各文件的大小，输入-?获取更多帮助
 alias fs='func_fs'                                  # 检查当前目录下各文件的大小，输入-?获取更多帮助
 #*
 #* 编程辅助
@@ -80,17 +80,41 @@ alias xbc='func_export_bcpath'                      # 将svn/basecomponents路�
 
 func_sput()
 {
+    if [ -z "$1" ]; then
+	echo "参数错误，使用 -? 或 --help 参数获取帮助信息"
+	return
+    fi
     if [ "$1" = "-?" -o "$1" = "--help" ]
     then
         echo "后跟要发送到远程电脑的文件或文件夹"
 	echo "该命令会将要发送的文件缓存，之后，可在远程电脑上用 sget 命令获取"
+	echo "使用 -i 作为参数时，可查看已缓存的待发送文件"
+	echo "使用 -d 作为参数是，将清空已缓存的待发送文件"
 	echo "重复调用该命令，会覆盖掉上次缓存的文件"
         return
     fi
-	if [ -f /temporary_dir/$userdir/sput.tar.gz ]; then
-		rm /temporary_dir/$userdir/sput.tar.gz
+    if [ $1 = -i ]; then
+	if [ -f /temporary_dir/$userdir/sput.tar ]; then
+	    echo "待发送的缓存文件有："
+	    tar -tf /temporary_dir/$userdir/sput.tar
+	else
+	    echo "当前没有待发送的文件"
 	fi
-	tar -czf /temporary_dir/$userdir/sput.tar.gz $*
+	return
+    fi
+    if [ $1 = -d ]; then
+	if [ -f /temporary_dir/$userdir/sput.tar ]; then
+		rm /temporary_dir/$userdir/sput.tar
+	fi
+	echo "已清空待发送文件缓存区"
+	return
+    fi
+    echo "缓存如下文件到代理发送区："
+    if [ -f /temporary_dir/$userdir/sput.tar ]; then
+	tar -rvf /temporary_dir/$userdir/sput.tar $*
+    else
+	tar -cvf /temporary_dir/$userdir/sput.tar $*
+    fi
 }
 sget_name=""
 func_sget()
@@ -101,6 +125,7 @@ func_sget()
 	echo "调用该命令会将远程电脑上通过 sput 命令缓存的文件拉取过来"
 	echo "如果使用过该命令，再次使用该命令后，可不带后面的远程电脑地址"
 	echo "此时，命令将从上次记录的远程电脑地址上拉取"
+	echo "使用 -i 作为参数时，可查看缓存的远程电脑地址"
         return
     fi
 	rand=$RANDOM
@@ -110,11 +135,19 @@ func_sget()
 			return
 		fi
 	fi
+	if [ $1 = -i ]; then
+		if [ -n "$sget_name" ]; then
+			echo "缓存的远程电脑地址: $sget_name"
+		else
+			echo "当前没有缓存的远程电脑地址"
+		fi
+		return
+	fi
 	if [[ "$1" == *"@"* ]]; then
 		sget_name="$1"
-		scp $sget_name:/temporary_dir/$userdir/sput.tar.gz ./sget.$rand.tar.gz
-		tar -xzf sget.$rand.tar.gz 
-		rm -f sget.$rand.tar.gz 
+		scp $sget_name:/temporary_dir/$userdir/sput.tar ./sget.$rand.tar > /dev/null
+		tar -xf sget.$rand.tar
+		rm -f sget.$rand.tar
 	else
 		echo "参数格式错误，请使用 -? 获取帮助"
 	fi
