@@ -133,13 +133,11 @@ func_sget()
         return
     fi
 	rand=$RANDOM
-	if [ -z "$1" ]; then
-		if [ -z "$sget_name" ]; then
-			echo "参数错误，请输入远程电脑地址"
-			return
-		fi
+	if [ -z "$sget_name" -a -z "$1" ]; then
+		echo "参数错误，请输入远程电脑地址"
+		return
 	fi
-	if [ $1 = -i ]; then
+	if [ "$1" = "-i" ]; then
 		if [ -n "$sget_name" ]; then
 			echo "缓存的远程电脑地址: $sget_name"
 		else
@@ -147,13 +145,25 @@ func_sget()
 		fi
 		return
 	fi
-	if [[ "$1" == *"@"* ]]; then
+	if [ -n "$1" ]; then
+	    echo $1 | egrep -q '^[a-zA-Z0-9]+@([0-9]+.){3}[0-9]+$'
+	    if [ $? -eq 0 ]; then
 		sget_name="$1"
+	    else
+		echo "参数格式错误，请使用 -? 获取帮助"
+		return
+	    fi
+        fi
+	if [ -z "$sget_name" ]; then
+		echo "参数错误，请输入远程电脑地址"
+		return
+	else
 		scp $sget_name:/temporary_dir/$userdir/sput.tar ./sget.$rand.tar > /dev/null
 		tar -xf sget.$rand.tar
+		echo ""
+		echo "从 $sget_name 获取的文件有："
+		tar -tf sget.$rand.tar
 		rm -f sget.$rand.tar
-	else
-		echo "参数格式错误，请使用 -? 获取帮助"
 	fi
 }
 
