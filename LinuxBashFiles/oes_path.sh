@@ -88,12 +88,12 @@ func_sput()
     then
         echo "后跟要发送到远程电脑的文件或文件夹"
 	echo "该命令会将要发送的文件缓存，之后，可在远程电脑上用 sget 命令获取"
-	echo "使用 -i 作为参数时，可查看已缓存的待发送文件"
-	echo "使用 -d 作为参数是，将清空已缓存的待发送文件"
+	echo "使用 -i/-l 作为参数时，可查看已缓存的待发送文件"
+	echo "使用 -d/-c 作为参数是，将清空已缓存的待发送文件"
 	echo "重复调用该命令，会将新文件添加到缓存区而不会覆盖掉之前缓存的文件"
         return
     fi
-    if [ $1 = -i ]; then
+    if [ $1 = -i -o $1 = -l ]; then
 	if [ -f /temporary_dir/$userdir/sput.tar ]; then
 	    echo "待发送的缓存文件有："
 	    tar -tf /temporary_dir/$userdir/sput.tar
@@ -102,9 +102,9 @@ func_sput()
 	fi
 	return
     fi
-    if [ $1 = -d ]; then
+    if [ $1 = -d -o $1 = -c ]; then
 	if [ -f /temporary_dir/$userdir/sput.tar ]; then
-		rm /temporary_dir/$userdir/sput.tar
+		rm -f /temporary_dir/$userdir/sput.tar
 	fi
 	echo "已清空待发送文件缓存区"
 	return
@@ -115,9 +115,10 @@ func_sput()
     fi
     echo "缓存如下文件到待发送区："
     if [ -f /temporary_dir/$userdir/sput.tar ]; then
-	tar -rvf /temporary_dir/$userdir/sput.tar $*
+    	tar -rvf /temporary_dir/$userdir/sput.tar $*
     else
-	tar -cvf /temporary_dir/$userdir/sput.tar $*
+	    tar -cvf /temporary_dir/$userdir/sput.tar $*
+        chmod 666 /temporary_dir/$userdir/sput.tar
     fi
 }
 sget_name=""
@@ -613,14 +614,14 @@ if has("cscope")
     "d: 查找本函数调用的函数
     nmap <C-\>d :cs find d <C-R>=expand("<cword>")<CR><CR>
     
-    nmap <C-@><C-@>s :vert scs find s <C-R>=expand("<cword>")<CR><CR>
-    nmap <C-@><C-@>g :vert scs find g <C-R>=expand("<cword>")<CR><CR>
-    nmap <C-@><C-@>c :vert scs find c <C-R>=expand("<cword>")<CR><CR>
-    nmap <C-@><C-@>t :vert scs find t <C-R>=expand("<cword>")<CR><CR>
-    nmap <C-@><C-@>e :vert scs find e <C-R>=expand("<cword>")<CR><CR>
-    nmap <C-@><C-@>f :vert scs find f <C-R>=expand("<cfile>")<CR><CR>    
-    nmap <C-@><C-@>i :vert scs find i ^<C-R>=expand("<cfile>")<CR>$<CR>    
-    nmap <C-@><C-@>d :vert scs find d <C-R>=expand("<cword>")<CR><CR>
+    nmap <A-@>s :vert scs find s <C-R>=expand("<cword>")<CR><CR>
+    nmap <A-@>g :vert scs find g <C-R>=expand("<cword>")<CR><CR>
+    nmap <A-@>c :vert scs find c <C-R>=expand("<cword>")<CR><CR>
+    nmap <A-@>t :vert scs find t <C-R>=expand("<cword>")<CR><CR>
+    nmap <A-@>e :vert scs find e <C-R>=expand("<cword>")<CR><CR>
+    nmap <A-@>f :vert scs find f <C-R>=expand("<cfile>")<CR><CR>    
+    nmap <A-@>i :vert scs find i ^<C-R>=expand("<cfile>")<CR>$<CR>    
+    nmap <A-@>d :vert scs find d <C-R>=expand("<cword>")<CR><CR>
 endif
 EOF
 fi
