@@ -1,7 +1,9 @@
 #! /bin/bash
 export svn_path=/data/svn
 #GCCVER=`gcc --version | head -n 1 | rev | cut -d' ' -f1 | rev | cut -d'.' -f1`
-version=7.3
+
+#版本变更规则：添加新的方法，第1版本号变；问题修复、功能优化，第2版本号变；无关紧要的修改，第3版本号变
+version=8.0.1
 
 ##-----------------------------------------命令定义--------------------------------------
 
@@ -42,10 +44,10 @@ alias updb='func_updatedb2'                         # 对updatedb的定制化包
 alias loc='func_locate2'                            # 对locate的定制化包装，使用-?获取帮助
 alias locf='func_locate2f'                          # loc命令，过滤掉文件夹，只显示文件，使用-?获取帮助
 alias locd='func_locate2d'                          # loc命令，过滤掉文件，只显示文件夹，使用-?获取帮助
-alias spush='func_spush'                            # 对scp命令的包装，使用-?获取帮助
-alias spull='func_spull'                            # 对scp命令的包装，使用-?获取帮助
-alias sput='func_sput'                              # 对scp命令的包装，使用-?获取帮助
-alias sget='func_sget'                              # 对scp命令的包装，使用-?获取帮助
+alias rpush='func_spush'                            # 对scp命令的包装，使用-?获取帮助
+alias rpull='func_spull'                            # 对scp命令的包装，使用-?获取帮助
+alias rput='func_sput'                              # 对scp命令的包装，使用-?获取帮助
+alias rget='func_sget'                              # 对scp命令的包装，使用-?获取帮助
 #*
 #* 文件编辑
 alias notes='func_notes'                            # 记事本(同np)，使用-?获取帮助
@@ -87,7 +89,7 @@ func_sput()
     if [ "$1" = "-?" -o "$1" = "--help" ]
     then
         echo "后跟要发送到远程电脑的文件或文件夹"
-	echo "该命令会将要发送的文件缓存，之后，可在远程电脑上用 sget 命令获取"
+	echo "该命令会将要发送的文件缓存，之后，可在远程电脑上用 rget 命令获取"
 	echo "使用 -i/-l 作为参数时，可查看已缓存的待发送文件"
 	echo "使用 -d/-c 作为参数是，将清空已缓存的待发送文件"
 	echo "重复调用该命令，会将新文件添加到缓存区而不会覆盖掉之前缓存的文件"
@@ -115,7 +117,7 @@ func_sput()
     fi
     echo "缓存如下文件到待发送区："
     if [ -f /temporary_dir/$userdir/sput.tar ]; then
-    	tar -rvf /temporary_dir/$userdir/sput.tar $*
+    	tar -uvf /temporary_dir/$userdir/sput.tar $*
     else
 	    tar -cvf /temporary_dir/$userdir/sput.tar $*
         chmod 666 /temporary_dir/$userdir/sput.tar
@@ -127,7 +129,7 @@ func_sget()
     if [ "$1" = "-?" -o "$1" = "--help" ]
     then
         echo "后跟远程电脑地址，格式为： 远程电脑用户名@远程电脑IP地址"
-	echo "调用该命令会将远程电脑上通过 sput 命令缓存的文件拉取过来"
+	echo "调用该命令会将远程电脑上通过 rput 命令缓存的文件拉取过来"
 	echo "如果使用过该命令，再次使用该命令后，可不带后面的远程电脑地址"
 	echo "此时，命令将从上次记录的远程电脑地址上拉取"
 	echo "使用 -i 作为参数时，可查看缓存的远程电脑地址"
@@ -358,6 +360,8 @@ func_updatef()
 	echo "如果该行前缀符合prefix，则用replace替换该行的内容，"
 	echo "如果找不到匹配的行，则在文件最后追加一行，内容为replace"
 	echo "如果已经有跟replace一致的行，则不再追加replace行"
+    echo "prefix不能包含空格，replace可以包含空格，也就是说，"
+    echo "从第3个参数开始，以及之后的所有参数，都将被认为是replace部分"
         return
     fi
     if [[ $# < 3 ]] 
@@ -2053,7 +2057,7 @@ func_locate2()
         if [ -f "locate.db" ]; then
 		db=`pwd`/locate.db
 		cd "$tmpdir"
-        	read -p "将使用数据库 `pwd`/locate.db 进行检索，按回车键继续，按其它键退出" -n 1 user_sel
+        	read -p "将使用数据库 $db 进行检索，按回车键继续，按其它键退出" -n 1 user_sel
         	if [ "$user_sel" != "" ]; then
 		    echo ""
 	            return 1
