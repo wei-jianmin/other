@@ -36,7 +36,7 @@ if [ ! -d /disk ]; then
 	#echo "mkdir /disk"
 fi
 
-for sd in `fdisk -l 2>/dev/null | grep ^/dev/sd | cut -d' ' -f1 | cut -d'/' -f3`
+for sd in `fdisk -l 2>/dev/null | grep ^/dev/ | cut -d' ' -f1 | cut -d'/' -f3`
 do
 	echo "===> try mount /dev/$sd" >> mount.log
 	if [ ! -d /disk/$sd ]; then

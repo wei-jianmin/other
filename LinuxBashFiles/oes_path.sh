@@ -3,7 +3,7 @@ export svn_path=/data/svn
 #GCCVER=`gcc --version | head -n 1 | rev | cut -d' ' -f1 | rev | cut -d'.' -f1`
 
 #版本变更规则：添加新的方法，第1版本号变；问题修复、功能优化，第2版本号变；无关紧要的修改，第3版本号变
-version=8.0.1
+version=9.0.1
 
 ##-----------------------------------------命令定义--------------------------------------
 
@@ -55,10 +55,11 @@ alias np='func_notes'                               # 记事本(同notes)，使�
 alias notes2='func_notes2'                          # 记事本2(同npp)，使用-?获取帮助
 alias npp='func_notes2'                             # 记事本2(同notes2)，使用-?获取帮助
 alias upf='func_updatef'                            # 文件修改/添加匹配行，输入-?获取更多帮助
-alias upvim='func_update_vimrc'			    # 定制~/.vimrc文件，使之更易于使用，输入-?获取更多帮助
+alias upvim='func_update_vimrc'                     # 定制~/.vimrc文件，使之更易于使用，输入-?获取更多帮助
 #*
 #* 磁盘管理
-alias chkroot='func_check_root_files'		    # 检查根目录下各文件的大小，输入-?获取更多帮助
+alias mtdisk='func_mtdisk'                          # 挂载或卸载磁盘，输入-?获取更多帮助
+alias chkroot='func_check_root_files'               # 检查根目录下各文件的大小，输入-?获取更多帮助
 alias fs='func_fs'                                  # 检查当前目录下各文件的大小，输入-?获取更多帮助
 #*
 #* 编程辅助
@@ -72,13 +73,79 @@ alias ff='func_find_file_func'                      # 查找函数定义(参数)
 alias cls='printf "\033c"'                          # 清屏，不支持-?获取帮助
 alias pl='printLine2'                               # 在屏幕上输出分割线，输入-?获取更多帮助
 alias ti='func_set_title'                           # 设置终端窗口标题,使用-?获取帮助
-alias telopen='func_telopen'			    # 同 EXPORT DISPLAY={IP}:0, 输入-?获取更多帮助
+alias telopen='func_telopen'                        # 同 EXPORT DISPLAY={IP}:0, 输入-?获取更多帮助
 alias quit='func_quit'                              # 退出，不支持-?获取帮助
 #*
 #* 其它
 alias xbc='func_export_bcpath'                      # 将svn/basecomponents路径下的一些常用路径导出为变量，不支持-?获取帮助
 
 ##-----------------------------------------函数实现--------------------------------------
+
+func_mtdisk()
+{
+    if [ "$1" = "-?" ]; then
+        echo "说明： "
+        echo "默认会把各磁盘分区挂载到当前目录下"
+        echo "使用 -u 参数时，将卸载当前目录下的各个磁盘挂载点"
+        echo "执行该命令需要 root 权限，推荐在空目录下使用该命令进行磁盘挂载"
+        return
+    fi
+
+    if [ ! `whoami` = root ]; then
+        echo "需要 root 权限"
+        return
+    fi
+
+    tmpdir=`pwd`
+    
+
+    if [ "$1" = "-u" ]; then
+        echo "-----------------------------卸载磁盘-----------------------------" 
+        for f in `ls $tmpdir`; do
+            if [ -d $f ]; then
+                printf "===> 尝试卸载 $f "
+                umount $f > /dev/null 2>&1
+                if [ $? = 0 ]; then
+                    printf "成功"
+                    if [ -z "$(ls -A $f)" ]; then
+                        rm -d $f
+                        echo "，删除 $f"
+                    else
+                        echo " "
+                    fi
+                else
+                    echo -e "\e[31m失败\e[0m"
+                    umount $f
+                    echo ""
+                fi
+            fi
+        done
+        return
+    fi
+
+    echo "------------------------------挂载磁盘------------------------------"
+    
+    for sd in `fdisk -l 2>/dev/null | grep ^/dev/ | cut -d' ' -f1 | cut -d'/' -f3`
+    do
+        printf "===> 尝试挂载 /dev/$sd "
+        if [ ! -d $sd ]; then
+            mkdir $sd 
+        fi
+        if [ -z "$(ls -A $sd)" ]; then
+            mount /dev/$sd $sd > /dev/null 2>&1
+            if [ $? = 0 ]; then
+                echo "成功"
+            else
+                echo -e "\e[31m失败\e[0m"
+                mount /dev/$sd $sd
+                echo ""
+                rm -d $sd
+                fi
+        else
+            echo -e "\e[31失败\e[0m ：$sd 目录存在且不为空，无法将 /dev/$sd 挂载到该目录下"
+        fi
+    done
+}
 
 func_sput()
 {
@@ -1705,11 +1772,11 @@ func_make_test_load_so()
          printf("load library error : %s\n",dlerror());
          return 1;
       }
-    }' > /temporary_dir/$userdir/test_load_so.cpp
-    ##chmod 777 /temporary_dir/$userdir/test_load_so.cpp    
-    gcc -Wl,-rpath=.  /temporary_dir/$userdir/test_load_so.cpp -ldl -o /temporary_dir/$userdir/test_load_so.bin
+    }' > /temporary_dir/$userdir/test_load_so.c
+    ##chmod 777 /temporary_dir/$userdir/test_load_so.c  
+    gcc -Wl,-rpath=.  /temporary_dir/$userdir/test_load_so.c -ldl -o /temporary_dir/$userdir/test_load_so.bin
     chmod a+x /temporary_dir/$userdir/test_load_so.bin
-    rm -f /temporary_dir/$userdir/test_load_so.cpp
+    rm -f /temporary_dir/$userdir/test_load_so.c
 }
 func_call_test_load_so()
 {
