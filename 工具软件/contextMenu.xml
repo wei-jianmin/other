@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+By modifying this file, you can customize your context menu popuped as right clicking on the edit zone.
+It may be more convinient to access to your frequent used commands via context menu than via the top menu.
+
+Please check "How to Customize the Context Menu" on:
+http://sourceforge.net/apps/mediawiki/notepad-plus/index.php?title=Context_Menu
+-->
+<NotepadPlus>
+    <ScintillaContextMenu>
+		<!-- 
+		Use MenuEntryName and MenuItemName to localize your commands to add. 
+		The values should be in English but not in translated language.
+		(You can set Notepad++ language back to English from Preferences dialog via menu "Settings->Preferences...")
+		-->
+	<Item MenuEntryName="删除空行" id="42055"/>
+	<Item MenuEntryName="删除空白行" id="42056" ItemNameAs="删除空白行"/>
+         <Item MenuEntryName="函数列表窗口" id="44084" ItemNameAs="函数列表窗口"/>
+		<!-- id="0" is the separator -->
+        <Item id="0"/>
+
+		<!-- You can use command id to add the commands you want. 
+		Check english.xml to get commands id:
+		http://notepad-plus.svn.sourceforge.net/viewvc/notepad-plus/trunk/PowerEditor/installer/nativeLang/english.xml
+		
+		Use FolderName (optional) to create sub-menu. FolderName can be used in any type of item.
+		FolderName value can be in any language.
+
+		To add plugin commands, you have to use PluginEntryName and PluginCommandItemName to localize the plugin commands
+		-->
+	<Item FolderName="书签" id="43007"/>
+	<Item FolderName="书签" id="43006"/>
+	<Item FolderName="书签" id="43005"/>
+
+
+	<Item FolderName="折叠" id="44030"/>
+	<Item FolderName="折叠" id="44031"/>
+	<Item FolderName="折叠" id="44010"/>
+	<Item FolderName="折叠" id="44029"/>
+		
+	<Item FolderName="复制文件名" id="42030"/>
+	<Item FolderName="复制文件名" id="42031"/>
+	<Item FolderName="复制文件名" id="42029"/>
+		
+
+        	<Item id="0"/>
+
+	<Item FolderName="文字编码" PluginEntryName="MIME Tools" PluginCommandItemName="Base64 Encode" ItemNameAs="Base64 编码" />
+         <Item FolderName="文字编码" PluginEntryName="MIME Tools" PluginCommandItemName="Base64 Decode" ItemNameAs="Base64 解码" />
+	<Item FolderName="文字编码" PluginEntryName="Converter" PluginCommandItemName="ASCII -> HEX" ItemNameAs="HEX 编码" />
+         <Item FolderName="文字编码" PluginEntryName="Converter" PluginCommandItemName="HEX -> ASCII" ItemNameAs="HEX 解码" />
+		
+	<Item FolderName="书签目录" PluginEntryName="OpenRelativeHotfile" PluginCommandItemName="显示书签窗口"/>
+	<Item FolderName="书签目录" PluginEntryName="OpenRelativeHotfile" PluginCommandItemName="打开插件目录"/>
+    </ScintillaContextMenu>
+</NotepadPlus>
